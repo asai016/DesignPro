@@ -1,0 +1,94 @@
+{% extends 'design_app/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Редактирование заявки</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Информация о заявке -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Информация о заявке:</h6>
+                            <p><strong>Пользователь:</strong> {{ application.user.username }}</p>
+                            <p><strong>Название:</strong> {{ application.title }}</p>
+                            <p><strong>Категория:</strong> {{ application.category.name }}</p>
+                            <p><strong>Дата создания:</strong> {{ application.upload_date|date:"d.m.Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Текущий статус:</h6>
+                            <span class="badge fs-6
+                                {% if application.status == 'NEW' %}bg-primary
+                                {% elif application.status == 'IN_PROGRESS' %}bg-warning
+                                {% else %}bg-success{% endif %}">
+                                {{ application.get_status_display }}
+                            </span>
+
+                            {% if application.plan_file %}
+                            <div class="mt-3">
+                                <h6>Фото помещения:</h6>
+                                <img src="{{ application.plan_file.url }}" alt="План помещения" class="img-fluid rounded shadow-sm" style="max-height: 200px;">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Описание -->
+                    <div class="mb-4">
+                        <h6>Описание заявки:</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="card-text">{{ application.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Форма смены статуса -->
+                    <hr>
+                    <h5 class="mb-3">Смена статуса заявки</h5>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                                {{ field.label }}
+                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+
+                            {% if field.errors %}
+                                <div class="alert alert-danger mt-1">
+                                    {% for error in field.errors %}
+                                        <div class="small">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="alert alert-info">
+                            <strong>Внимание!</strong><br>
+                            • Для статуса "Принято в работу" обязателен комментарий<br>
+                            • Для статуса "Выполнено" обязателен файл дизайн-проекта
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary me-md-2">Назад к списку</a>
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

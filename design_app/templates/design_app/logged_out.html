@@ -1,0 +1,24 @@
+{% extends 'design_app/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card auth-form">
+                <div class="card-body text-center">
+                    <h2 class="card-title mb-4 text-success">Выход выполнен</h2>
+
+                    <div class="alert alert-info">
+                        <p class="mb-0">Вы успешно вышли из системы.</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="{% url 'index' %}" class="btn btn-primary me-2">На главную</a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary">Войти снова</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

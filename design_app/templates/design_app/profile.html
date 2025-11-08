@@ -1,0 +1,114 @@
+{% extends 'design_app/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <!-- Заголовок и кнопка создания -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">👤 Личный кабинет</h2>
+                <a href="{% url 'create_room_plan' %}" class="btn btn-primary">
+                    ➕ Новая заявка
+                </a>
+            </div>
+
+            <p class="text-muted mb-4">Добро пожаловать, <strong>{{ user.username }}</strong>! Управляйте вашими дизайн-проектами.</p>
+
+            <!-- Фильтр по статусу -->
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title mb-3">🔍 Фильтр по статусу:</h6>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'profile' %}" class="btn btn-outline-primary {% if not status_filter %}active{% endif %}">
+                            Все
+                        </a>
+                        <a href="{% url 'profile' %}?status=NEW" class="btn btn-outline-primary {% if status_filter == 'NEW' %}active{% endif %}">
+                            Новые
+                        </a>
+                        <a href="{% url 'profile' %}?status=IN_PROGRESS" class="btn btn-outline-primary {% if status_filter == 'IN_PROGRESS' %}active{% endif %}">
+                            В работе
+                        </a>
+                        <a href="{% url 'profile' %}?status=COMPLETED" class="btn btn-outline-primary {% if status_filter == 'COMPLETED' %}active{% endif %}">
+                            Готово
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Список заявок -->
+            <div class="row">
+                {% if room_plans %}
+                    {% for plan in room_plans %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 shadow-sm border-0">
+                            {% if plan.plan_file %}
+                            <img src="{{ plan.plan_file.url }}" class="card-img-top" alt="{{ plan.title }}" style="height: 180px; object-fit: cover;">
+                            {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
+                                <span class="text-muted">📁 Нет изображения</span>
+                            </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ plan.title }}</h5>
+                                <p class="card-text text-muted small">{{ plan.description|truncatewords:12 }}</p>
+
+                                <div class="mb-2">
+                                    <strong>🏷️ Категория:</strong> {{ plan.category.name }}
+                                </div>
+
+                                <div class="mb-2">
+                                    <span class="badge
+                                        {% if plan.status == 'NEW' %}bg-primary
+                                        {% elif plan.status == 'IN_PROGRESS' %}bg-warning
+                                        {% else %}bg-success{% endif %}">
+                                        {{ plan.get_status_display }}
+                                    </span>
+                                </div>
+
+                                {% if plan.admin_comment %}
+                                <div class="mb-2">
+                                    <strong>💬 Комментарий:</strong>
+                                    <p class="text-muted small">{{ plan.admin_comment }}</p>
+                                </div>
+                                {% endif %}
+
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        📅 {{ plan.upload_date|date:"d.m.Y H:i" }}
+                                    </small>
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent border-0">
+                                {% if plan.can_be_deleted %}
+                                <form method="POST" action="{% url 'delete_room_plan' plan.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"
+                                            onclick="return confirmDelete(event, 'Удалить заявку «{{ plan.title }}»?');">
+                                        🗑️ Удалить
+                                    </button>
+                                </form>
+                                {% else %}
+                                <small class="text-muted">❌ Удаление недоступно</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <h4 class="text-muted">📭 Заявки не найдены</h4>
+                            <p class="text-muted">{% if status_filter %}Нет заявок с выбранным статусом{% else %}Создайте первую заявку на дизайн{% endif %}</p>
+                            {% if not status_filter %}
+                            <a href="{% url 'create_room_plan' %}" class="btn btn-primary mt-3">
+                                ✨ Создать первую заявку
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

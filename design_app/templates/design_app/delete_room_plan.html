@@ -1,0 +1,30 @@
+{% extends 'design_app/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card auth-form">
+                <div class="card-body text-center">
+                    <h2 class="card-title mb-4 text-danger">Удаление заявки</h2>
+                    
+                    <div class="alert alert-warning">
+                        <h5>{{ room_plan.title }}</h5>
+                        <p class="mb-0">{{ room_plan.description|truncatewords:20 }}</p>
+                    </div>
+                    
+                    <p class="mb-4">Вы уверены, что хотите удалить эту заявку? Это действие нельзя отменить.</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="{% url 'profile' %}" class="btn btn-secondary me-md-2">Отмена</a>
+                            <button type="submit" class="btn btn-danger">Да, удалить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'design_app/base.html' %}
+
+{% block content %}
+<header class="p-5 mb-4 bg-white rounded-3 shadow-sm text-center">
+    <div class="container-fluid py-5">
+        <h1 class="display-4 fw-bold text-dark">Создавайте интерьер с Design.<span style="color: #667eea;">pro</span></h1>
+        <p class="fs-5 text-muted">Профессиональные дизайн-решения для вашего пространства</p>
+
+        <!-- Счетчик заявок в работе -->
+        <div class="alert alert-info d-inline-block border-0" style="background: #667eea; color: white;">
+            <h5 class="mb-0">🔄 Заявок в работе: {{ in_progress_count }}</h5>
+        </div>
+
+        {% if not user.is_authenticated %}
+            <hr class="my-4">
+            <p>Начните создавать свой идеальный интерьер сегодня!</p>
+            <a class="btn btn-primary btn-lg" href="{% url 'register' %}" role="button">
+                Начать Создание
+            </a>
+            <p class="mt-3"><small class="text-secondary">Уже с нами? <a href="{% url 'login' %}" class="text-decoration-none">Войти в аккаунт</a></small></p>
+        {% else %}
+            <hr class="my-4">
+            <p class="fs-5">Рады видеть вас, <span class="fw-bold">{{ user.username }}</span>!</p>
+            <p class="text-muted">Ваши дизайн-проекты ждут вас в личном кабинете</p>
+            <a class="btn btn-primary btn-lg" href="{% url 'profile' %}" role="button">
+                Мой Кабинет
+            </a>
+        {% endif %}
+    </div>
+</header>
+
+<!-- Выполненные работы -->
+{% if completed_applications %}
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Наши последние работы</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for app in completed_applications %}
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0">
+                    {% if app.plan_file %}
+                    <img src="{{ app.plan_file.url }}" class="card-img-top" alt="{{ app.title }}" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ app.title }}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">{{ app.category.name }}</small><br>
+                            <small class="text-muted">Завершено: {{ app.upload_date|date:"d.m.Y" }}</small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Преимущества -->
+<div class="row row-cols-1 row-cols-md-3 g-4 text-center mb-5">
+    <div class="col">
+        <div class="card h-100 p-4 border-0 shadow-sm">
+            <h3 class="card-title fw-bold" style="color: #667eea;">📐 Планы и Чертежи</h3>
+            <p class="card-text text-muted">Загружайте планы помещений в любом формате</p>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 p-4 border-0 shadow-sm">
+            <h3 class="card-title fw-bold" style="color: #667eea;">🎨 Уникальный Дизайн</h3>
+            <p class="card-text text-muted">Индивидуальные решения от профессиональных дизайнеров</p>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 p-4 border-0 shadow-sm">
+            <h3 class="card-title fw-bold" style="color: #667eea;">💬 Быстрая Связь</h3>
+            <p class="card-text text-muted">Обсуждайте и корректируйте проекты онлайн</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
