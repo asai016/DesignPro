@@ -1,189 +1,131 @@
-from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import RegexValidator, EmailValidator
-from .models import RoomPlan, Category, UserProfile
-import os
-from django.contrib.auth.forms import PasswordResetForm
+from django.core.validators import RegexValidator
 
-class CustomPasswordResetForm(PasswordResetForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['email'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'example@mail.ru'
-        })
 
-# Кастомная форма регистрации с валидацией
-class CustomUserCreationForm(UserCreationForm):
-    full_name = forms.CharField(
+# Модель категорий
+class Category(models.Model):
+    name = models.CharField(max_length=100, verbose_name="Название категории")
+    description = models.TextField(blank=True, verbose_name="Описание")
+
+    class Meta:
+        verbose_name = "Категория"
+        verbose_name_plural = "Категории"
+
+    def __str__(self):
+        return self.name
+
+
+# Модель для профиля пользователя с валидацией
+class UserProfile(models.Model):
+    USER_TYPES = [
+        ('CLIENT', 'Клиент'),
+        ('MANAGER', 'Менеджер'),
+        ('ADMIN', 'Администратор'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    # ФИО с валидацией кириллицы
+    full_name = models.CharField(
         max_length=200,
-        label='ФИО*',
+        verbose_name="ФИО",
         validators=[
             RegexValidator(
                 regex='^[А-Яа-яёЁ\\s\\-]+$',
                 message='ФИО должно содержать только кириллические буквы, пробелы и дефис'
             )
-        ],
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Иванов Иван Иванович'
-        })
+        ]
     )
 
-    username = forms.CharField(
-        max_length=150,
-        label='Логин*',
-        validators=[
-            RegexValidator(
-                regex='^[a-zA-Z\\-]+$',
-                message='Логин должен содержать только латинские буквы и дефис'
-            )
-        ],
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'ivanov'
-        })
+    user_type = models.CharField(
+        max_length=10,
+        choices=USER_TYPES,
+        default='CLIENT',
+        verbose_name="Тип пользователя"
     )
 
-    # Email с валидацией
-    email = forms.EmailField(
-        label='Email*',
-        validators=[EmailValidator()],
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'example@mail.ru'
-        })
-    )
-    agreement = forms.BooleanField(
-        required=True,
-        label='Я согласен на обработку персональных данных*',
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    # Согласие на обработку персональных данных
+    agreement = models.BooleanField(
+        default=False,
+        verbose_name="Согласие на обработку персональных данных"
     )
 
     class Meta:
-        model = User
-        fields = ['full_name', 'username', 'email', 'password1', 'password2', 'agreement']
+        verbose_name = "Профиль пользователя"
+        verbose_name_plural = "Профили пользователей"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Применяем Bootstrap классы ко всем полям
-        for field_name, field in self.fields.items():
-            if not isinstance(field.widget, forms.CheckboxInput):
-                field.widget.attrs.update({'class': 'form-control'})
-            if field_name == 'agreement':
-                field.widget.attrs.update({'class': 'form-check-input'})
+    def __str__(self):
+        return f"{self.full_name} ({self.get_user_type_display()})"
 
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-        if User.objects.filter(username=username).exists():
-            raise forms.ValidationError('Пользователь с таким логином уже существует')
-        return username
+    def is_admin(self):
+        return self.user_type == 'ADMIN' or self.user.is_staff
 
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.email = self.cleaned_data['email']
-        if commit:
-            user.save()
-            # Создаем профиль пользователя
-            UserProfile.objects.create(
-                user=user,
-                full_name=self.cleaned_data['full_name'],
-                agreement=self.cleaned_data['agreement']
-            )
-        return user
+    def is_manager(self):
+        return self.user_type == 'MANAGER'
+
+    def is_client(self):
+        return self.user_type == 'CLIENT'
 
 
-# Форма создания заявки с валидацией файла
-class RoomPlanForm(forms.ModelForm):
-    def clean_plan_file(self):
-        image = self.cleaned_data.get('plan_file')
-        if image:
-            # Проверка размера файла (2MB)
-            if image.size > 2 * 1024 * 1024:
-                raise forms.ValidationError('Размер файла не должен превышать 2MB')
+# Модель для Заявки/Плана
+class RoomPlan(models.Model):
+    STATUS_CHOICES = [
+        ('NEW', 'Новая'),
+        ('IN_PROGRESS', 'Принято в работу'),
+        ('COMPLETED', 'Выполнено'),
+    ]
 
-            # Проверка формата
-            valid_extensions = ['.jpg', '.jpeg', '.png', '.bmp']
-            ext = os.path.splitext(image.name)[1].lower()
-            if ext not in valid_extensions:
-                raise forms.ValidationError('Поддерживаются только форматы: JPG, JPEG, PNG, BMP')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='room_plans', verbose_name="Пользователь")
+    title = models.CharField(max_length=255, verbose_name="Название заявки")
+    description = models.TextField(verbose_name="Описание помещения")
 
-        return image
+    # Добавляем категорию
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name="Категория")
+
+    upload_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата загрузки")
+    plan_file = models.ImageField(
+        upload_to='room_plans/',
+        blank=True,
+        null=True,
+        verbose_name="Фото помещения или план",
+        help_text="Форматы: JPG, JPEG, PNG, BMP. Максимальный размер: 2MB"
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='NEW',
+        verbose_name="Статус заявки"
+    )
+
+    # Поля для администратора/менеджера
+    design_image = models.ImageField(
+        upload_to='designs/',
+        blank=True,
+        null=True,
+        verbose_name="Дизайн-проект"
+    )
+    admin_comment = models.TextField(blank=True, verbose_name="Комментарий администратора")
+
+    # Кто работает над заявкой
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_applications',
+        verbose_name="Назначена"
+    )
 
     class Meta:
-        model = RoomPlan
-        fields = ['title', 'description', 'category', 'plan_file']
-        widgets = {
-            'title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Например: Дизайн гостиной в квартире'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'placeholder': 'Опишите помещение, ваши пожелания по стилю, бюджету...',
-                'rows': 4
-            }),
-            'category': forms.Select(attrs={'class': 'form-control'}),
-            'plan_file': forms.FileInput(attrs={'class': 'form-control'}),
-        }
-        labels = {
-            'title': 'Название заявки*',
-            'description': 'Описание*',
-            'category': 'Категория*',
-            'plan_file': 'Фото помещения или план*',
-        }
+        verbose_name = "Заявка"
+        verbose_name_plural = "Заявки"
+        ordering = ['-upload_date']
 
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
 
-# Форма для смены статуса администратором
-class RoomPlanStatusForm(forms.ModelForm):
-    class Meta:
-        model = RoomPlan
-        fields = ['status', 'design_image', 'admin_comment']
-        widgets = {
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'admin_comment': forms.Textarea(attrs={
-                'class': 'form-control',
-                'placeholder': 'Комментарий для пользователя...',
-                'rows': 3
-            }),
-            'design_image': forms.FileInput(attrs={'class': 'form-control'}),
-        }
-        labels = {
-            'status': 'Статус заявки',
-            'design_image': 'Дизайн-проект',
-            'admin_comment': 'Комментарий',
-        }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        status = cleaned_data.get('status')
-        design_image = cleaned_data.get('design_image')
-        admin_comment = cleaned_data.get('admin_comment')
-
-        # Валидация согласно ТЗ
-        if status == 'COMPLETED' and not design_image:
-            raise forms.ValidationError({
-                'design_image': 'Для статуса "Выполнено" необходимо прикрепить дизайн-проект'
-            })
-
-        if status == 'IN_PROGRESS' and not admin_comment:
-            raise forms.ValidationError({
-                'admin_comment': 'Для статуса "Принято в работу" необходимо добавить комментарий'
-            })
-
-        return cleaned_data
-
-
-# Форма аутентификации
-class CustomAuthenticationForm(AuthenticationForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Введите ваш логин'
-        })
-        self.fields['password'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Введите ваш пароль'
-        })
+    def can_be_deleted(self):
+        """Можно ли удалить заявку (только если статус Новая)"""
+        return self.status == 'NEW'

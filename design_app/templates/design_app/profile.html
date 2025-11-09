@@ -6,18 +6,18 @@
         <div class="col-12">
             <!-- Заголовок и кнопка создания -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">👤 Личный кабинет</h2>
+                <h2 class="fw-bold">Личный кабинет</h2>
                 <a href="{% url 'create_room_plan' %}" class="btn btn-primary">
-                    ➕ Новая заявка
+                    + Новая заявка
                 </a>
             </div>
 
-            <p class="text-muted mb-4">Добро пожаловать, <strong>{{ user.username }}</strong>! Управляйте вашими дизайн-проектами.</p>
+            <p class="text-muted mb-4">Добро пожаловать, <strong>{{ user.username }}</strong>! Здесь вы можете управлять своими заявками на дизайн.</p>
 
             <!-- Фильтр по статусу -->
-            <div class="card mb-4 border-0 shadow-sm">
+            <div class="card mb-4">
                 <div class="card-body">
-                    <h6 class="card-title mb-3">🔍 Фильтр по статусу:</h6>
+                    <h6 class="card-title">Фильтр по статусу:</h6>
                     <div class="btn-group" role="group">
                         <a href="{% url 'profile' %}" class="btn btn-outline-primary {% if not status_filter %}active{% endif %}">
                             Все
@@ -29,7 +29,7 @@
                             В работе
                         </a>
                         <a href="{% url 'profile' %}?status=COMPLETED" class="btn btn-outline-primary {% if status_filter == 'COMPLETED' %}active{% endif %}">
-                            Готово
+                            Выполнено
                         </a>
                     </div>
                 </div>
@@ -37,26 +37,25 @@
 
             <!-- Список заявок -->
             <div class="row">
+
                 {% if room_plans %}
                     {% for plan in room_plans %}
+
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm border-0">
+                        <div class="card h-100 shadow-sm">
                             {% if plan.plan_file %}
-                            <img src="{{ plan.plan_file.url }}" class="card-img-top" alt="{{ plan.title }}" style="height: 180px; object-fit: cover;">
-                            {% else %}
-                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
-                                <span class="text-muted">📁 Нет изображения</span>
-                            </div>
+                            <img src="{{ plan.plan_file.url }}" class="card-img-top" alt="{{ plan.title }}" style="height: 200px; object-fit: cover;">
                             {% endif %}
                             <div class="card-body">
                                 <h5 class="card-title">{{ plan.title }}</h5>
-                                <p class="card-text text-muted small">{{ plan.description|truncatewords:12 }}</p>
+                                <p class="card-text text-muted small">{{ plan.description|truncatewords:15 }}</p>
 
                                 <div class="mb-2">
-                                    <strong>🏷️ Категория:</strong> {{ plan.category.name }}
+                                    <strong>Категория:</strong> {{ plan.category.name }}
                                 </div>
 
                                 <div class="mb-2">
+
                                     <span class="badge
                                         {% if plan.status == 'NEW' %}bg-primary
                                         {% elif plan.status == 'IN_PROGRESS' %}bg-warning
@@ -67,28 +66,28 @@
 
                                 {% if plan.admin_comment %}
                                 <div class="mb-2">
-                                    <strong>💬 Комментарий:</strong>
+                                    <strong>Комментарий администратора:</strong>
                                     <p class="text-muted small">{{ plan.admin_comment }}</p>
                                 </div>
                                 {% endif %}
 
                                 <p class="card-text">
                                     <small class="text-muted">
-                                        📅 {{ plan.upload_date|date:"d.m.Y H:i" }}
+                                        Создано: {{ plan.upload_date|date:"d.m.Y H:i" }}
                                     </small>
                                 </p>
                             </div>
-                            <div class="card-footer bg-transparent border-0">
+                            <div class="card-footer bg-transparent">
                                 {% if plan.can_be_deleted %}
                                 <form method="POST" action="{% url 'delete_room_plan' plan.id %}" style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-outline-danger btn-sm"
-                                            onclick="return confirmDelete(event, 'Удалить заявку «{{ plan.title }}»?');">
-                                        🗑️ Удалить
-                                    </button>
-                                </form>
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirmDelete(event, 'Вы уверены, что хотите удалить заявку №{{ application.id }}? Это действие необратимо.');">
+                                    Удалить
+                                </button>
+                            </form>
                                 {% else %}
-                                <small class="text-muted">❌ Удаление недоступно</small>
+                                <small class="text-muted">Удаление недоступно</small>
                                 {% endif %}
                             </div>
                         </div>
@@ -97,11 +96,11 @@
                 {% else %}
                     <div class="col-12">
                         <div class="text-center py-5">
-                            <h4 class="text-muted">📭 Заявки не найдены</h4>
-                            <p class="text-muted">{% if status_filter %}Нет заявок с выбранным статусом{% else %}Создайте первую заявку на дизайн{% endif %}</p>
+                            <h4 class="text-muted">Заявки не найдены</h4>
+                            <p class="text-muted">{% if status_filter %}Нет заявок с выбранным статусом{% else %}Создайте первую заявку на дизайн помещения{% endif %}</p>
                             {% if not status_filter %}
                             <a href="{% url 'create_room_plan' %}" class="btn btn-primary mt-3">
-                                ✨ Создать первую заявку
+                                Создать первую заявку
                             </a>
                             {% endif %}
                         </div>
